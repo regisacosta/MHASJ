@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mental Health Screening Tool</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css">
     <style>
         :root {
             --primary-color: #4a6fa5;
@@ -173,6 +172,7 @@
             justify-content: center;
             align-items: center;
             padding: 30px;
+            flex-direction: column;
         }
         
         .spinner {
@@ -182,6 +182,7 @@
             border-radius: 50%;
             border-top: 4px solid var(--primary-color);
             animation: spin 1s linear infinite;
+            margin-bottom: 15px;
         }
         
         @keyframes spin {
@@ -192,6 +193,69 @@
         .hidden {
             display: none;
         }
+        
+        .system-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .debug-panel {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: var(--border-radius);
+            font-family: monospace;
+            font-size: 12px;
+            display: none;
+        }
+        
+        .debug-panel.active {
+            display: block;
+        }
+        
+        .debug-toggle {
+            font-size: 0.8rem;
+            text-decoration: underline;
+            color: #6c757d;
+            cursor: pointer;
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .debug-log {
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        /* Additional feedback visualization */
+        .feedback-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .feedback-button {
+            margin: 0 5px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        
+        .feedback-positive {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .feedback-negative {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
@@ -199,6 +263,9 @@
         <header>
             <h1>Mental Health Screening</h1>
             <p class="lead">This confidential screening helps assess your mental health and provides personalized resources.</p>
+            <div id="systemMessage" class="system-message">
+                The AI system is currently unavailable. You'll receive standard recommendations based on your responses.
+            </div>
         </header>
         
         <!-- Progress Indicator -->
@@ -294,7 +361,7 @@
         <!-- Loading Indicator -->
         <div id="loadingIndicator" class="loading-indicator hidden">
             <div class="spinner"></div>
-            <p>Analyzing your responses...</p>
+            <p id="loadingMessage">Analyzing your responses...</p>
         </div>
         
         <!-- Assessment Results -->
@@ -321,346 +388,20 @@
                 <p id="guidanceText"></p>
             </div>
             
+            <div class="feedback-container">
+                <p>Was this assessment helpful?</p>
+                <button class="feedback-button feedback-positive" id="feedbackPositive">Yes, it was helpful</button>
+                <button class="feedback-button feedback-negative" id="feedbackNegative">No, it wasn't helpful</button>
+            </div>
+            
             <div class="controls mt-4">
                 <button id="restartButton" class="btn btn-outline-secondary">Start New Screening</button>
             </div>
         </div>
-    </div>
-
-    <script>
-        // Global state
-        const state = {
-            sessionId: null,
-            currentStep: 0,
-            responses: {},
-            followUpCount: 0,
-            isComplete: false
-        };
-
-        // DOM elements
-        const elements = {
-            screeningForm: document.getElementById('screeningForm'),
-            initialQuestions: document.getElementById('initialQuestions'),
-            followUpQuestions: document.getElementById('followUpQuestions'),
-            loadingIndicator: document.getElementById('loadingIndicator'),
-            assessmentResults: document.getElementById('assessmentResults'),
-            progressFill: document.getElementById('progressFill'),
-            backButton: document.getElementById('backButton'),
-            nextButton: document.getElementById('nextButton'),
-            restartButton: document.getElementById('restartButton'),
-            riskLevel: document.getElementById('riskLevel'),
-            observationsList: document.getElementById('observationsList'),
-            resourcesList: document.getElementById('resourcesList'),
-            guidanceText: document.getElementById('guidanceText')
-        };
-
-        // API endpoints
-        const API = {
-            screening: '/api/v1/screening',
-            legacyScreening: '/submit-screening'
-        };
-
-        // Initialize the application
-        function init() {
-            updateProgress();
-            attachEventListeners();
-        }
-
-        // Attach event listeners
-        function attachEventListeners() {
-            elements.nextButton.addEventListener('click', handleContinue);
-            elements.backButton.addEventListener('click', handleBack);
-            elements.restartButton.addEventListener('click', resetScreening);
-        }
-
-        // Handle continue button click
-        async function handleContinue() {
-            // Collect current responses
-            collectResponses();
-
-            // Show loading indicator
-            toggleLoading(true);
-
-            try {
-                // Submit responses to API
-                const result = await submitResponses(state.responses);
-                
-                // Update session ID
-                state.sessionId = result.sessionId;
-                
-                // Process the result
-                if (result.isComplete) {
-                    // Show final assessment
-                    displayAssessment(result.analysis);
-                } else {
-                    // Show follow-up questions
-                    displayFollowUpQuestions(result.followUpQuestions);
-                }
-                
-                // Update progress
-                state.currentStep++;
-                updateProgress();
-            } catch (error) {
-                console.error('Error submitting responses:', error);
-                alert('There was an error processing your responses. Please try again.');
-            } finally {
-                // Hide loading indicator
-                toggleLoading(false);
-            }
-        }
-
-        // Handle back button click
-        function handleBack() {
-            if (state.followUpCount > 0) {
-                // Remove last follow-up question
-                const lastQuestion = document.querySelector('.follow-up-question:last-child');
-                if (lastQuestion) {
-                    lastQuestion.remove();
-                    state.followUpCount--;
-                }
-                
-                // Update button states
-                elements.backButton.disabled = state.followUpCount === 0;
-                
-                // Update progress
-                state.currentStep--;
-                updateProgress();
-            }
-        }
-
-        // Collect responses from form
-        function collectResponses() {
-            // Collect radio button values
-            document.querySelectorAll('input[type="radio"]:checked').forEach(input => {
-                state.responses[input.name] = input.value;
-            });
-            
-            // Collect slider values
-            document.querySelectorAll('input[type="range"]').forEach(input => {
-                state.responses[input.name] = input.value;
-            });
-            
-            // Collect checkbox values
-            const checkboxGroups = {};
-            document.querySelectorAll('input[type="checkbox"]:checked').forEach(input => {
-                const name = input.name.replace('[]', '');
-                if (!checkboxGroups[name]) {
-                    checkboxGroups[name] = [];
-                }
-                checkboxGroups[name].push(input.value);
-            });
-            
-            // Add checkbox groups to responses
-            Object.keys(checkboxGroups).forEach(key => {
-                state.responses[key] = checkboxGroups[key];
-            });
-            
-            // Collect text inputs
-            document.querySelectorAll('input[type="text"], textarea').forEach(input => {
-                if (input.value.trim()) {
-                    state.responses[input.name] = input.value.trim();
-                }
-            });
-        }
-
-        // Submit responses to API
-        async function submitResponses(responses) {
-            const url = API.screening;
-            
-            const requestBody = {
-                responses: responses
-            };
-            
-            // Include session ID if available
-            if (state.sessionId) {
-                requestBody.sessionId = state.sessionId;
-            }
-            
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
-            });
-            
-            if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
-            }
-            
-            return await response.json();
-        }
-
-        // Display follow-up questions
-        function displayFollowUpQuestions(questions) {
-            if (!questions || questions.length === 0) {
-                return;
-            }
-            
-            // Enable back button
-            elements.backButton.disabled = false;
-            
-            // Loop through questions and add them to the form
-            questions.forEach((questionText, index) => {
-                const questionId = `follow_up_${state.followUpCount + index}`;
-                const questionDiv = document.createElement('div');
-                questionDiv.className = 'question follow-up-question';
-                
-                const questionTextDiv = document.createElement('div');
-                questionTextDiv.className = 'question-text';
-                questionTextDiv.textContent = questionText;
-                
-                const answerInput = document.createElement('textarea');
-                answerInput.className = 'text-input';
-                answerInput.name = questionId;
-                answerInput.rows = 3;
-                answerInput.placeholder = 'Enter your response...';
-                
-                questionDiv.appendChild(questionTextDiv);
-                questionDiv.appendChild(answerInput);
-                
-                elements.followUpQuestions.appendChild(questionDiv);
-            });
-            
-            // Update follow-up count
-            state.followUpCount += questions.length;
-            
-            // Scroll to the last question
-            const lastQuestion = document.querySelector('.follow-up-question:last-child');
-            if (lastQuestion) {
-                lastQuestion.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-
-        // Display final assessment
-        function displayAssessment(analysis) {
-            // Hide form and show results
-            elements.screeningForm.classList.add('hidden');
-            elements.assessmentResults.classList.remove('hidden');
-            
-            // Set risk level
-            elements.riskLevel.textContent = analysis.risk_level || 'Moderate';
-            elements.riskLevel.className = `risk-indicator risk-${(analysis.risk_level || 'moderate').toLowerCase()}`;
-            
-            // Display observations
-            elements.observationsList.innerHTML = '';
-            if (analysis.observations && analysis.observations.length > 0) {
-                analysis.observations.forEach(observation => {
-                    const li = document.createElement('li');
-                    li.textContent = observation;
-                    elements.observationsList.appendChild(li);
-                });
-            } else {
-                elements.observationsList.innerHTML = '<li>No specific observations available.</li>';
-            }
-            
-            // Display resources
-            elements.resourcesList.innerHTML = '';
-            if (analysis.recommended_resources && Object.keys(analysis.recommended_resources).length > 0) {
-                Object.entries(analysis.recommended_resources).forEach(([category, resources]) => {
-                    const categoryHeader = document.createElement('div');
-                    categoryHeader.className = 'resource-category';
-                    categoryHeader.textContent = category;
-                    elements.resourcesList.appendChild(categoryHeader);
-                    
-                    const resourceList = document.createElement('ul');
-                    resources.forEach(resource => {
-                        const li = document.createElement('li');
-                        li.textContent = resource;
-                        resourceList.appendChild(li);
-                    });
-                    
-                    elements.resourcesList.appendChild(resourceList);
-                });
-            } else {
-                elements.resourcesList.innerHTML = '<p>No specific resources available.</p>';
-            }
-            
-            // Display guidance
-            elements.guidanceText.textContent = analysis.guidance || 'Consider speaking with a mental health professional for personalized guidance.';
-        }
-
-        // Toggle loading indicator
-        function toggleLoading(isLoading) {
-            if (isLoading) {
-                elements.loadingIndicator.classList.remove('hidden');
-                elements.screeningForm.classList.add('hidden');
-            } else {
-                elements.loadingIndicator.classList.add('hidden');
-                if (!state.isComplete) {
-                    elements.screeningForm.classList.remove('hidden');
-                }
-            }
-        }
-
-        // Update progress bar
-        function updateProgress() {
-            // Estimate progress based on step and follow-up count
-            const baseProgress = 10; // Start at 10%
-            const initialQuestionsProgress = 40; // Initial questions are worth 40%
-            const followUpProgress = 50; // Follow-up questions share the remaining 50%
-            
-            let progress = baseProgress;
-            
-            // Add progress for initial questions if answered
-            if (state.currentStep > 0) {
-                progress += initialQuestionsProgress;
-            }
-            
-            // Add progress for follow-up questions
-            if (state.followUpCount > 0) {
-                // Estimate we'll have around 5 follow-up questions total
-                const estimatedTotalFollowUps = Math.max(5, state.followUpCount);
-                const followUpPercentage = state.followUpCount / estimatedTotalFollowUps * followUpProgress;
-                progress += followUpPercentage;
-            }
-            
-            // Cap at 100%
-            progress = Math.min(100, progress);
-            
-            // Update progress bar
-            elements.progressFill.style.width = `${progress}%`;
-        }
-
-        // Reset screening to start over
-        function resetScreening() {
-            // Reset state
-            state.sessionId = null;
-            state.currentStep = 0;
-            state.responses = {};
-            state.followUpCount = 0;
-            state.isComplete = false;
-            
-            // Clear form
-            elements.followUpQuestions.innerHTML = '';
-            
-            // Reset radio buttons and checkboxes
-            document.querySelectorAll('input[type="radio"]:checked').forEach(input => {
-                input.checked = false;
-            });
-            
-            document.querySelectorAll('input[type="checkbox"]:checked').forEach(input => {
-                input.checked = false;
-            });
-            
-            // Reset sliders
-            document.querySelectorAll('input[type="range"]').forEach(input => {
-                input.value = input.defaultValue;
-            });
-            
-            // Reset button states
-            elements.backButton.disabled = true;
-            
-            // Show form and hide results
-            elements.screeningForm.classList.remove('hidden');
-            elements.assessmentResults.classList.add('hidden');
-            
-            // Reset progress
-            updateProgress();
-        }
-
-        // Initialize app on load
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
-</body>
-</html>
+        
+        <!-- Debug Panel -->
+        <div class="debug-panel" id="debugPanel">
+            <h4>Debug Information</h4>
+            <div class="debug-log" id="debugLog"></div>
+        </div>
+        <div class="debug-toggle" id="debugToggle">Show/Hide Debug Panel</div>
