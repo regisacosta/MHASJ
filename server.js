@@ -14,7 +14,6 @@ app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 
-
 // Enhanced middleware
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
