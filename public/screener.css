@@ -1,0 +1,59 @@
+/* Mental Health Screener Styles */
+#mental-health-screener-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f4f4f4;
+    border-radius: 8px;
+}
+
+.screening-stage {
+    display: none;
+}
+
+.screening-stage.active {
+    display: block;
+    animation: fadeIn 0.5s ease;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#screening-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+#screening-navigation button {
+    padding: 10px 20px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#screening-navigation button:hover {
+    background-color: #357abd;
+}
+
+#screening-navigation .hidden {
+    display: none;
+}
