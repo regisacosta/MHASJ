@@ -4,56 +4,663 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mental Health Screening Tool</title>
-    <link rel="stylesheet" href="/screener.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #6d9886;
+            --text-color: #333;
+            --light-bg: #f8f9fa;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--light-bg);
+            padding: 20px;
+        }
+        
+        .screening-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 30px;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 10px;
+            transition: width 0.5s ease-in-out;
+        }
+        
+        .question {
+            margin-bottom: 25px;
+        }
+        
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+        
+        .answer-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .radio-option, .checkbox-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            border: 1px solid #dee2e6;
+            transition: all 0.2s ease;
+        }
+        
+        .radio-option:hover, .checkbox-option:hover {
+            background-color: #f0f4f8;
+        }
+        
+        .slider-container {
+            padding: 10px 0;
+        }
+        
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .text-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            border: 1px solid #dee2e6;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #3d5d8a;
+        }
+        
+        .btn-outline-secondary {
+            color: #6c757d;
+            border-color: #6c757d;
+        }
+        
+        .btn-outline-secondary:hover {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .assessment-results {
+            padding: 20px;
+            border-radius: var(--border-radius);
+            background-color: #f0f4f8;
+            margin-top: 30px;
+        }
+        
+        .risk-indicator {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .risk-low {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .risk-moderate {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .risk-high {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .observation-list, .resource-list {
+            padding-left: 20px;
+        }
+        
+        .resource-category {
+            margin-top: 15px;
+            font-weight: 500;
+        }
+        
+        .loading-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <div id="mental-health-screener-container">
-        <form id="mental-health-screening-form">
-            <div id="screening-stages">
-                <div class="screening-stage active" data-stage="1">
-                    <h2>Initial Screening</h2>
-                    
-                    <div class="form-group">
-                        <label for="age">Age</label>
-                        <input type="number" id="age" name="responses[age]" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="gender">Gender</label>
-                        <select id="gender" name="responses[gender]" required>
-                            <option value="">Select</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="non-binary">Non-Binary</option>
-                            <option value="prefer-not-to-say">Prefer Not to Say</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="current_mood">How would you describe your current mood?</label>
-                        <textarea id="current_mood" name="responses[current_mood]" required></textarea>
+    <div class="screening-container">
+        <header>
+            <h1>Mental Health Screening</h1>
+            <p class="lead">This confidential screening helps assess your mental health and provides personalized resources.</p>
+        </header>
+        
+        <!-- Progress Indicator -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+        </div>
+        
+        <!-- Initial Screening Form -->
+        <div id="screeningForm" class="screening-content">
+            <div id="initialQuestions">
+                <!-- Mood Question -->
+                <div class="question">
+                    <div class="question-text">How would you rate your mood over the past two weeks?</div>
+                    <div class="answer-options">
+                        <label class="radio-option">
+                            <input type="radio" name="mood" value="1">
+                            Very poor - I've been feeling extremely down most of the time
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="mood" value="2">
+                            Poor - I've been feeling down more often than not
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="mood" value="3">
+                            Neutral - I've had ups and downs
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="mood" value="4">
+                            Good - I've generally felt positive
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="mood" value="5">
+                            Very good - I've consistently felt positive
+                        </label>
                     </div>
                 </div>
                 
-                <!-- Additional stages will be dynamically generated by JS -->
+                <!-- Stress Level Question -->
+                <div class="question">
+                    <div class="question-text">What is your current stress level?</div>
+                    <div class="slider-container">
+                        <input type="range" name="stress_level" min="0" max="10" step="1" value="5" class="form-range">
+                        <div class="slider-labels">
+                            <span>No stress</span>
+                            <span>Moderate</span>
+                            <span>Extreme stress</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Symptoms Question -->
+                <div class="question">
+                    <div class="question-text">Have you experienced any of the following in the past month? (Select all that apply)</div>
+                    <div class="answer-options">
+                        <label class="checkbox-option">
+                            <input type="checkbox" name="symptoms" value="sleep_changes">
+                            Significant changes in sleep patterns
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" name="symptoms" value="appetite_changes">
+                            Significant changes in appetite
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" name="symptoms" value="concentration">
+                            Difficulty concentrating
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" name="symptoms" value="loss_of_interest">
+                            Loss of interest in activities you usually enjoy
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" name="symptoms" value="energy_loss">
+                            Low energy or fatigue
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" name="symptoms" value="worry">
+                            Excessive worry or fear
+                        </label>
+                    </div>
+                </div>
             </div>
             
-            <div id="screening-navigation">
-                <button type="button" id="prev-stage" class="hidden">Previous</button>
-                <button type="button" id="next-stage">Continue</button>
-                <button type="submit" id="submit-screening" class="hidden">Submit Screening</button>
+            <!-- Dynamic Follow-up Questions Will Be Added Here -->
+            <div id="followUpQuestions"></div>
+            
+            <!-- Form Controls -->
+            <div class="controls">
+                <button id="backButton" class="btn btn-outline-secondary" disabled>Back</button>
+                <button id="nextButton" class="btn btn-primary">Continue</button>
+            </div>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="loading-indicator hidden">
+            <div class="spinner"></div>
+            <p>Analyzing your responses...</p>
+        </div>
+        
+        <!-- Assessment Results -->
+        <div id="assessmentResults" class="assessment-results hidden">
+            <h2>Your Assessment Results</h2>
+            
+            <div class="risk-assessment">
+                <h3>Risk Level</h3>
+                <div id="riskLevel" class="risk-indicator">Analyzing...</div>
             </div>
             
-            <div id="screening-results" class="hidden">
-                <h3>Screening Results</h3>
-                <div id="results-content"></div>
-                <div id="resource-recommendations"></div>
+            <div class="observations">
+                <h3>Observations</h3>
+                <ul id="observationsList" class="observation-list"></ul>
             </div>
-        </form>
+            
+            <div class="resources">
+                <h3>Recommended Resources</h3>
+                <div id="resourcesList" class="resource-list"></div>
+            </div>
+            
+            <div class="guidance">
+                <h3>Guidance</h3>
+                <p id="guidanceText"></p>
+            </div>
+            
+            <div class="controls mt-4">
+                <button id="restartButton" class="btn btn-outline-secondary">Start New Screening</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Use local jQuery for simplicity -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="/screener.js"></script>
+    <script>
+        // Global state
+        const state = {
+            sessionId: null,
+            currentStep: 0,
+            responses: {},
+            followUpCount: 0,
+            isComplete: false
+        };
+
+        // DOM elements
+        const elements = {
+            screeningForm: document.getElementById('screeningForm'),
+            initialQuestions: document.getElementById('initialQuestions'),
+            followUpQuestions: document.getElementById('followUpQuestions'),
+            loadingIndicator: document.getElementById('loadingIndicator'),
+            assessmentResults: document.getElementById('assessmentResults'),
+            progressFill: document.getElementById('progressFill'),
+            backButton: document.getElementById('backButton'),
+            nextButton: document.getElementById('nextButton'),
+            restartButton: document.getElementById('restartButton'),
+            riskLevel: document.getElementById('riskLevel'),
+            observationsList: document.getElementById('observationsList'),
+            resourcesList: document.getElementById('resourcesList'),
+            guidanceText: document.getElementById('guidanceText')
+        };
+
+        // API endpoints
+        const API = {
+            screening: '/api/v1/screening',
+            legacyScreening: '/submit-screening'
+        };
+
+        // Initialize the application
+        function init() {
+            updateProgress();
+            attachEventListeners();
+        }
+
+        // Attach event listeners
+        function attachEventListeners() {
+            elements.nextButton.addEventListener('click', handleContinue);
+            elements.backButton.addEventListener('click', handleBack);
+            elements.restartButton.addEventListener('click', resetScreening);
+        }
+
+        // Handle continue button click
+        async function handleContinue() {
+            // Collect current responses
+            collectResponses();
+
+            // Show loading indicator
+            toggleLoading(true);
+
+            try {
+                // Submit responses to API
+                const result = await submitResponses(state.responses);
+                
+                // Update session ID
+                state.sessionId = result.sessionId;
+                
+                // Process the result
+                if (result.isComplete) {
+                    // Show final assessment
+                    displayAssessment(result.analysis);
+                } else {
+                    // Show follow-up questions
+                    displayFollowUpQuestions(result.followUpQuestions);
+                }
+                
+                // Update progress
+                state.currentStep++;
+                updateProgress();
+            } catch (error) {
+                console.error('Error submitting responses:', error);
+                alert('There was an error processing your responses. Please try again.');
+            } finally {
+                // Hide loading indicator
+                toggleLoading(false);
+            }
+        }
+
+        // Handle back button click
+        function handleBack() {
+            if (state.followUpCount > 0) {
+                // Remove last follow-up question
+                const lastQuestion = document.querySelector('.follow-up-question:last-child');
+                if (lastQuestion) {
+                    lastQuestion.remove();
+                    state.followUpCount--;
+                }
+                
+                // Update button states
+                elements.backButton.disabled = state.followUpCount === 0;
+                
+                // Update progress
+                state.currentStep--;
+                updateProgress();
+            }
+        }
+
+        // Collect responses from form
+        function collectResponses() {
+            // Collect radio button values
+            document.querySelectorAll('input[type="radio"]:checked').forEach(input => {
+                state.responses[input.name] = input.value;
+            });
+            
+            // Collect slider values
+            document.querySelectorAll('input[type="range"]').forEach(input => {
+                state.responses[input.name] = input.value;
+            });
+            
+            // Collect checkbox values
+            const checkboxGroups = {};
+            document.querySelectorAll('input[type="checkbox"]:checked').forEach(input => {
+                const name = input.name.replace('[]', '');
+                if (!checkboxGroups[name]) {
+                    checkboxGroups[name] = [];
+                }
+                checkboxGroups[name].push(input.value);
+            });
+            
+            // Add checkbox groups to responses
+            Object.keys(checkboxGroups).forEach(key => {
+                state.responses[key] = checkboxGroups[key];
+            });
+            
+            // Collect text inputs
+            document.querySelectorAll('input[type="text"], textarea').forEach(input => {
+                if (input.value.trim()) {
+                    state.responses[input.name] = input.value.trim();
+                }
+            });
+        }
+
+        // Submit responses to API
+        async function submitResponses(responses) {
+            const url = API.screening;
+            
+            const requestBody = {
+                responses: responses
+            };
+            
+            // Include session ID if available
+            if (state.sessionId) {
+                requestBody.sessionId = state.sessionId;
+            }
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+            
+            return await response.json();
+        }
+
+        // Display follow-up questions
+        function displayFollowUpQuestions(questions) {
+            if (!questions || questions.length === 0) {
+                return;
+            }
+            
+            // Enable back button
+            elements.backButton.disabled = false;
+            
+            // Loop through questions and add them to the form
+            questions.forEach((questionText, index) => {
+                const questionId = `follow_up_${state.followUpCount + index}`;
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question follow-up-question';
+                
+                const questionTextDiv = document.createElement('div');
+                questionTextDiv.className = 'question-text';
+                questionTextDiv.textContent = questionText;
+                
+                const answerInput = document.createElement('textarea');
+                answerInput.className = 'text-input';
+                answerInput.name = questionId;
+                answerInput.rows = 3;
+                answerInput.placeholder = 'Enter your response...';
+                
+                questionDiv.appendChild(questionTextDiv);
+                questionDiv.appendChild(answerInput);
+                
+                elements.followUpQuestions.appendChild(questionDiv);
+            });
+            
+            // Update follow-up count
+            state.followUpCount += questions.length;
+            
+            // Scroll to the last question
+            const lastQuestion = document.querySelector('.follow-up-question:last-child');
+            if (lastQuestion) {
+                lastQuestion.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // Display final assessment
+        function displayAssessment(analysis) {
+            // Hide form and show results
+            elements.screeningForm.classList.add('hidden');
+            elements.assessmentResults.classList.remove('hidden');
+            
+            // Set risk level
+            elements.riskLevel.textContent = analysis.risk_level || 'Moderate';
+            elements.riskLevel.className = `risk-indicator risk-${(analysis.risk_level || 'moderate').toLowerCase()}`;
+            
+            // Display observations
+            elements.observationsList.innerHTML = '';
+            if (analysis.observations && analysis.observations.length > 0) {
+                analysis.observations.forEach(observation => {
+                    const li = document.createElement('li');
+                    li.textContent = observation;
+                    elements.observationsList.appendChild(li);
+                });
+            } else {
+                elements.observationsList.innerHTML = '<li>No specific observations available.</li>';
+            }
+            
+            // Display resources
+            elements.resourcesList.innerHTML = '';
+            if (analysis.recommended_resources && Object.keys(analysis.recommended_resources).length > 0) {
+                Object.entries(analysis.recommended_resources).forEach(([category, resources]) => {
+                    const categoryHeader = document.createElement('div');
+                    categoryHeader.className = 'resource-category';
+                    categoryHeader.textContent = category;
+                    elements.resourcesList.appendChild(categoryHeader);
+                    
+                    const resourceList = document.createElement('ul');
+                    resources.forEach(resource => {
+                        const li = document.createElement('li');
+                        li.textContent = resource;
+                        resourceList.appendChild(li);
+                    });
+                    
+                    elements.resourcesList.appendChild(resourceList);
+                });
+            } else {
+                elements.resourcesList.innerHTML = '<p>No specific resources available.</p>';
+            }
+            
+            // Display guidance
+            elements.guidanceText.textContent = analysis.guidance || 'Consider speaking with a mental health professional for personalized guidance.';
+        }
+
+        // Toggle loading indicator
+        function toggleLoading(isLoading) {
+            if (isLoading) {
+                elements.loadingIndicator.classList.remove('hidden');
+                elements.screeningForm.classList.add('hidden');
+            } else {
+                elements.loadingIndicator.classList.add('hidden');
+                if (!state.isComplete) {
+                    elements.screeningForm.classList.remove('hidden');
+                }
+            }
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            // Estimate progress based on step and follow-up count
+            const baseProgress = 10; // Start at 10%
+            const initialQuestionsProgress = 40; // Initial questions are worth 40%
+            const followUpProgress = 50; // Follow-up questions share the remaining 50%
+            
+            let progress = baseProgress;
+            
+            // Add progress for initial questions if answered
+            if (state.currentStep > 0) {
+                progress += initialQuestionsProgress;
+            }
+            
+            // Add progress for follow-up questions
+            if (state.followUpCount > 0) {
+                // Estimate we'll have around 5 follow-up questions total
+                const estimatedTotalFollowUps = Math.max(5, state.followUpCount);
+                const followUpPercentage = state.followUpCount / estimatedTotalFollowUps * followUpProgress;
+                progress += followUpPercentage;
+            }
+            
+            // Cap at 100%
+            progress = Math.min(100, progress);
+            
+            // Update progress bar
+            elements.progressFill.style.width = `${progress}%`;
+        }
+
+        // Reset screening to start over
+        function resetScreening() {
+            // Reset state
+            state.sessionId = null;
+            state.currentStep = 0;
+            state.responses = {};
+            state.followUpCount = 0;
+            state.isComplete = false;
+            
+            // Clear form
+            elements.followUpQuestions.innerHTML = '';
+            
+            // Reset radio buttons and checkboxes
+            document.querySelectorAll('input[type="radio"]:checked').forEach(input => {
+                input.checked = false;
+            });
+            
+            document.querySelectorAll('input[type="checkbox"]:checked').forEach(input => {
+                input.checked = false;
+            });
+            
+            // Reset sliders
+            document.querySelectorAll('input[type="range"]').forEach(input => {
+                input.value = input.defaultValue;
+            });
+            
+            // Reset button states
+            elements.backButton.disabled = true;
+            
+            // Show form and hide results
+            elements.screeningForm.classList.remove('hidden');
+            elements.assessmentResults.classList.add('hidden');
+            
+            // Reset progress
+            updateProgress();
+        }
+
+        // Initialize app on load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
 </body>
 </html>
